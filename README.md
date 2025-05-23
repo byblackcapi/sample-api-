@@ -54,6 +54,15 @@ CapiKisiAPI/
   📄 `data/kisiler.json` 
   ```[   {"ad":"Ayşe","soyad":"Demir","il":"Ankara","tc":"11111111110","gsm":"5431234567"},   {"ad":"Murat","soyad":"Kaya","il":"İstanbul","tc":"11111111111","gsm":"5437654321"} ] `   📄 `data/kisiler.yaml` `- ad: Ayşe   soyad: Demir   il: Ankara   tc: "11111111110"   gsm: "5431234567" - ad: Murat   soyad: Kaya   il: İstanbul   tc: "11111111111"   gsm: "5437654321" `   📄 `logs/app.log```
 ---
+#Hata ve başarı mesajları
+**Başarılı Cevap (200):**
+ `{ "durum": "başarılı", "veri": [ { "ad":"Ayşe","soyad":"Demir","il":"Ankara" } ] } ` 
+**Hata (404):**
+ `{ "durum":"hata","mesaj":"Kayıt bulunamadı.","sorgu":"ayse","ip":"127.0.0.1" } ` 
+**Rate limit (429):**
+ `{ "durum":"hata","mesaj":"Çok fazla istek. Lütfen sonra deneyin." } `  
+
+---
 
 ## 🧠 Kodlar ve Açıklamalar
 
