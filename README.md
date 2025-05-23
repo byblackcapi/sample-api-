@@ -1,4 +1,4 @@
-<!-- README.md for GitHub -->📘 Capi Kişi Sorgulama API Eğitimi – Rehberi
+<!-- README.md for GitHub -->📘 Capi Kişi Sorgulama API Eğitimi – Profesör Rehberi
 
     
 
@@ -275,6 +275,4 @@ GitHub: github.com/byblackcapi
 
 
 > Happy coding! 🎉
-
-
 
