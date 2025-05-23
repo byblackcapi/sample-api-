@@ -1,102 +1,114 @@
-README.txt
+🚀 Capi Kişi Sorgulama API Eğitimi  📘
 
-======================================================= 📘 Capi Kişi Sorgulama API Eğitimi – Profesyonel Rehber
+Bu doküman, adım adım RESTful API geliştirmeyi öğretmek amacıyla hazırlanmıştır. Üretim için değil, eğitim ve öğrenim amaçlı bir yapı sunar. Kendi API’nizi özelleştirerek geliştirebilmeniz için gerekli tüm bilgiler aşağıdadır.
 
-Bu doküman, sıfırdan API geliştirmenin temelini öğretmek amacıyla hazırlanmıştır. Proje bir hizmet olarak sunulmaz, eğitim ve öğrenim amaçlı hazırlanmıştır. Kendi API’nizi geliştirmeniz ve özelleştirmeniz için bir başlangıç noktası sağlar.
-
-⚠️ UYARI: Bu yazılım test edilmemiştir. Üretim ortamı için uygun değildir. Eğitim ve geliştirme amaçlıdır.
+⚠️ UYARI: Bu yazılım test edilmemiştir. Gerçek projelerde kullanmadan önce mutlaka kapsamlı test yapın.
 
 
 ---
 
 🎯 1. Projenin Amacı
 
-Bu projeyle, aşağıdaki kazanımları elde edeceksiniz:
+🛠️ Flask tabanlı bir REST API kurulumunu öğrenmek
 
-Flask ile RESTful API oluşturma mantığını öğrenirsiniz.
+📂 JSON, YAML veya uzak URL’den veri yüklemeyi kavramak
 
-JSON, YAML veya internet üzerinden veri yüklemeyi öğrenirsiniz.
+⏱️ Rate limit (istek sınırı) ve logging (günlükleme) entegrasyonunu görmek
 
-Rate limit (istek sınırı), logging (günlükleme) gibi profesyonel özellikleri entegre etmeyi öğrenirsiniz.
-
-Kendi API’nizi geliştirip çalıştırabilecek yapıyı kurmuş olursunuz.
+🚀 Kendi API’nizi baştan sona şablon şeklinde oluşturmak
 
 
 
 ---
 
-📁 2. Dosya ve Klasör Yapısı
+📁 2. Klasör & Dosya Yapısı
 
-CapiKisiAPI/                 # Proje ana dizini
-├── app.py                   # Ana Flask API uygulaması
-├── config.json              # Ayar dosyası (port, limit, kaynak)
-├── requirements.txt         # Gerekli kütüphaneler
-├── data/                    # Veri kaynakları (örnek JSON/YAML)
-│   ├── kisiler.json
-│   └── kisiler.yaml
-├── logs/                    # API günlükleri (log)
-│   └── app.log
-└── README.txt               # Bu eğitim dökümanı
+CapiKisiAPI/               # Proje kök dizini
+├── 📄 app.py               # Flask API uygulaması
+├── ⚙️ config.json         # Ayar dosyası (port, limit, kaynak)
+├── 📦 requirements.txt    # Python bağımlılıkları
+├── 🗄️ data/               # Test veri kaynakları
+│   ├── 🌐 kisiler.json     # Örnek JSON verisi
+│   └── 📝 kisiler.yaml     # Örnek YAML verisi
+├── 📑 logs/               # Log dosyaları
+│   └── 🗒️ app.log         # Uygulama günlükleri
+└── 📘 README.txt          # Bu eğitim dokümanı
 
 
 ---
 
-🧠 2.1. Klasör Dosyaları (Kodlarla Birlikte)
+🧠 2.1. Klasör İçerikleri & Kod Örnekleri
 
 📄 app.py
 
 from flask import Flask, jsonify, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-import logging
-import json
-import yaml
-import requests
+import logging, json, yaml, requests
 
-with open("config.json", "r", encoding="utf-8") as f:
+# — Konfigürasyon —
+with open("config.json", encoding="utf-8") as f:
     config = json.load(f)
 
 data_source = config["data_source"]
+
 app = Flask(__name__)
 limiter = Limiter(get_remote_address, app=app, default_limits=[config["rate_limit"]])
 
-logging.basicConfig(filename="logs/app.log", level=getattr(logging, config["logging_level"].upper()),
-                    format='%(asctime)s - %(message)s')
+# — Logging Ayarları —
+logging.basicConfig(
+    filename="logs/app.log",
+    level=getattr(logging, config["logging_level"].upper()),
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
+# — Veri Yükleme Fonksiyonu —
 def veri_yukle():
     try:
-        if data_source["type"] == "file":
-            if data_source["path"].endswith(".json"):
-                with open(data_source["path"], "r", encoding="utf-8") as f:
-                    return json.load(f)
-            elif data_source["path"].endswith(".yaml"):
-                with open(data_source["path"], "r", encoding="utf-8") as f:
-                    return yaml.safe_load(f)
-        elif data_source["type"] == "url":
-            r = requests.get(data_source["path"])
-            return r.json()
-    except:
-        return []
+        t = data_source["type"]
+        p = data_source["path"]
+        if t == "file":
+            if p.endswith('.json'):
+                return json.load(open(p, encoding='utf-8'))
+            if p.endswith(('.yaml', '.yml')):
+                return yaml.safe_load(open(p, encoding='utf-8'))
+        elif t == "url":
+            return requests.get(p).json()
+    except Exception as e:
+        logging.error(f"Veri yüklenirken hata: {e}")
+    return []
 
-def kisi_ara(tip, deger):
-    veri = veri_yukle()
-    return [kisi for kisi in veri if kisi.get(tip, '').lower() == deger.lower()]
+# — Genel Sorgulama Fonksiyonu —
+def kisi_ara(kriter, deger):
+    data = veri_yukle()
+    return [item for item in data if str(item.get(kriter, '')).lower() == deger.lower()]
 
-@app.route("/capiapi/<tip>/<deger>")
+# — Dinamik Endpoint —
+@app.route('/capiapi/<string:kriter>/<string:deger>', methods=['GET'])
 @limiter.limit(config["rate_limit"])
-def sorgula(tip, deger):
-    logging.info(f"/capiapi/{tip}/{deger} - IP: {request.remote_addr}")
-    sonuc = kisi_ara(tip, deger)
+def sorgula(kriter, deger):
+    ip = request.remote_addr
+    logging.info(f"İstek: /capiapi/{kriter}/{deger} - IP: {ip}")
+    sonuc = kisi_ara(kriter, deger)
     if sonuc:
         return jsonify({"durum": "başarılı", "veri": sonuc}), 200
-    return jsonify({"durum": "hata", "mesaj": "Kayıt bulunamadı.", "ip": request.remote_addr, "sorgu": deger}), 404
+    return jsonify({
+        "durum": "hata",
+        "mesaj": "Kayıt bulunamadı.",
+        "sorgu": deger,
+        "ip": ip
+    }), 404
 
+# — Hata Yönetimi —
 @app.errorhandler(404)
-def hata404(e):
-    return jsonify({"durum": "hata", "mesaj": "Geçersiz istek adresi."}), 404
+def not_found(e):
+    return jsonify({"durum": "hata", "mesaj": "Geçersiz endpoint."}), 404
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=config["port"], ssl_context="adhoc")
+    app.run(host='0.0.0.0', port=config['port'], ssl_context='adhoc')
+
+
+---
 
 📄 config.json
 
@@ -110,6 +122,9 @@ if __name__ == "__main__":
   }
 }
 
+
+---
+
 📄 requirements.txt
 
 flask
@@ -117,12 +132,18 @@ flask-limiter
 pyyaml
 requests
 
+
+---
+
 📄 data/kisiler.json
 
 [
-  {"ad": "Ayşe", "soyad": "Demir", "il": "Ankara", "tc": "11111111110", "gsm": "5431234567"},
-  {"ad": "Murat", "soyad": "Kaya", "il": "İstanbul", "tc": "11111111111", "gsm": "5437654321"}
+  {"ad":"Ayşe","soyad":"Demir","il":"Ankara","tc":"11111111110","gsm":"5431234567"},
+  {"ad":"Murat","soyad":"Kaya","il":"İstanbul","tc":"11111111111","gsm":"5437654321"}
 ]
+
+
+---
 
 📄 data/kisiler.yaml
 
@@ -137,158 +158,101 @@ requests
   tc: "11111111111"
   gsm: "5437654321"
 
+
+---
+
 📄 logs/app.log
 
-> Bu dosya, uygulama çalıştırıldığında otomatik oluşturulur ve günlük kayıtlarını içerir.
+> Uygulama çalıştıkça oluşturulur ve tarih, seviye ve mesaj içerir.
 
 
 
 
 ---
 
-🔌 3. Kurulum ve Ortam Hazırlığı
+⚙️ 3. Kurulum & Ortam Hazırlığı
 
-(Devam eder... önceki içerik korunur)
+Bu yapı çalıştırma değil, öğrenme içindir. Yine de denemek isteyenler:
 
-...
-
-. API geliştiricileri için kılavuz niteliğindedir.
-
----
-
-## ⚙️ 3. Kurulum ve Ortam Hazırlığı
-
-Bu proje çalıştırılmak için değil, öğrenilmek içindir. Yine de çalıştırmak isteyenler için örnek kurulum süreci:
-
-**1. Python ve pip yüklü olmalı**
-
-**2. Sanal ortam kurulumu (opsiyonel ama önerilir)**
-
-```bash
+# 1. Sanal ortam
 python -m venv venv
-# Linux/macOS: source venv/bin/activate
-# Windows:     venv\Scripts\activate
-```
+# Linux/macOS
+source venv/bin/activate
+# Windows
+venv\\Scripts\\activate
 
-**3. Kütüphanelerin yüklenmesi**
-
-```bash
+# 2. Bağımlılıklar
 pip install -r requirements.txt
-```
 
-**4. Örnek yapılandırma dosyası (`config.json`)**
+# 3. config.json düzenleme (dosya yolunuzu kontrol edin)
+# 4. Log klasörü oluşturun: mkdir logs
+# 5. Uygulamayı başlatın:
+python app.py
 
-```json
-{
-  "port": 443,
-  "rate_limit": "10/minute",
-  "logging_level": "INFO",
-  "data_source": {
-    "type": "file",
-    "path": "data/kisiler.json"
-  }
-}
-```
 
 ---
 
-## 🔌 4. API Nasıl Çalışır? Kodun Yapısı Nedir?
+🔍 4. API Sorgu Örnekleri
 
-`app.py` dosyasındaki kod, aşağıdaki görevleri yerine getirir:
+Tüm istekler HTTPS üzerinden:
 
-* `config.json` içinden ayarları okur (port, rate limit, veri kaynağı).
-* Flask uygulamasını başlatır.
-* Verileri `.json`, `.yaml` dosyasından ya da bir URL’den okur.
-* Gelen endpoint isteklerine göre filtreleme yapar ve sonuç döner.
-* Loglama ile istekleri terminale veya log dosyasına yazar.
+https://örnekapı.net/capiapi/<kriter>/<deger>
 
-Kodun içinde yorum satırları ile açıklamalar yer alır. Her endpoint bir sorgu türünü temsil eder.
+🆔 adsoyadsorgu/ayse
 
----
+📍 adsoyadilsorgu/ayseankara
 
-## 🔍 5. API Sorgu Örnekleri ve Yapısı
+🏠 adressorgu/11111111110
 
-Her sorgu HTTPS ile çalışır. Adres yapısı aşağıdaki gibidir:
+📱 gsmtcsorgu/5431234567
 
-```
-https://örnekapı.net/capiapi/<endpoint>/<değer>
-```
+🔢 tcgsmsorgu/11111111110
 
-**Sorgu Örnekleri:**
+🏡 ailesorgu/11111111110
 
-* `.../capiapi/adsoyadsorgu/ayse`
-* `.../capiapi/adsoyadilsorgu/ayseankara`
-* `.../capiapi/adressorgu/11111111110`
-* `.../capiapi/gsmtcsorgu/5431234567`
-* `.../capiapi/tcgsmsorgu/11111111110`
-* `.../capiapi/ailesorgu/11111111110`
-* `.../capiapi/sülalesorgu/11111111110`
+👪 sülalesorgu/11111111110
 
-**Başarılı JSON Yanıt Örneği:**
 
-```json
-{
-  "durum": "başarılı",
-  "veri": [ { "ad": "Ayşe", "soyad": "Demir", "il": "Ankara" } ]
-}
-```
+Başarılı Cevap:
 
-**Hatalı JSON Yanıt Örneği:**
+{ "durum":"başarılı", "veri":[{"ad":"Ayşe","soyad":"Demir","il":"Ankara"}] }
 
-```json
-{
-  "durum": "hata",
-  "mesaj": "Kayıt bulunamadı.",
-  "sorgu": "ayse",
-  "ip": "192.168.1.5"
-}
-```
+Hata Cevabı:
 
-**Rate Limit Aşımı:**
+{ "durum":"hata","mesaj":"Kayıt bulunamadı.","sorgu":"ayse","ip":"127.0.0.1" }
 
-```json
-{
-  "durum": "hata",
-  "mesaj": "Çok fazla istek. Lütfen biraz bekleyin."
-}
-```
+Harika! Artık kendi API’sini profesyonelce nasıl kurup çalıştıracağını biliyorsun. 👩‍🏫👨‍🏫
+
 
 ---
 
-## 💡 6. Geliştirme Fikirleri – Öğrenmeye Devam!
+🌟 5. İleri Seviye Geliştirme Önerileri
 
-API’yi daha profesyonel hale getirmek için eklemeniz önerilir:
+🔑 JWT ile kimlik doğrulama
 
-* 🔑 JWT token ile erişim doğrulama
-* 📊 Swagger ile canlı dökümantasyon
-* 🔄 Redis ile önbellekleme (caching)
-* 🧩 SQLAlchemy ile veritabanı desteği
-* 📈 Prometheus & Grafana ile izleme
-* 📥 Panel üzerinden veri ekleme/silme
+📝 Swagger/OpenAPI dokümantasyonu
 
----
+⚡ Caching (Redis) entegrasyonu
 
-## 👨‍🏫 7. Sonuç ve Öğrenme Hedefi
+🗄️ Veritabanı (SQLAlchemy) bağlantısı
 
-Bu proje:
+📈 Monitoring (Prometheus+Grafana)
 
-* Öğretme ve öğrenme temellidir.
-* Çalışan bir sistem değil, örnek yapı ve kod öğreticisidir.
-* Kendi API’nizi geliştirebilmeniz için rehberdir.
 
-İsterseniz kodları değiştirin, farklı veri kaynaklarıyla test edin ve profesyonel bir API geliştiricisi olma yolunda ilk adımı atın!
 
 ---
 
-## 📄 Lisans
+🤝 Katkı & İletişim
+
+Fork & Pull Request 🎉
+
+Telegram: @capiyedek
+
+GitHub: github.com/byblackcapi
+
+
+
+---
 
 MIT Lisansı © 2025 Capi
 
----
-
-## 👋 Sorularınız İçin
-
-Telegram: [@capiyedek](https://t.me/capiyedek)
-GitHub: [github.com/byblackcapi](https://github.com/byblackcapi)
-
-Mutlu kodlamalar! 🚀
