@@ -1,206 +1,294 @@
-# 🎉 CapiAPI – Kişi Bilgi Sorgulama REST API  
+README.txt
 
-> ⚠️ **UYARI:** Bu proje **test edilmemiştir**. Gerçek verilerle kullanmadan önce lütfen kapsamlı test yapınız!
+======================================================= 📘 Capi Kişi Sorgulama API Eğitimi – Profesyonel Rehber
 
----
+Bu doküman, sıfırdan API geliştirmenin temelini öğretmek amacıyla hazırlanmıştır. Proje bir hizmet olarak sunulmaz, eğitim ve öğrenim amaçlı hazırlanmıştır. Kendi API’nizi geliştirmeniz ve özelleştirmeniz için bir başlangıç noktası sağlar.
 
-## 🚀 Özellikler  
-- Dosya tabanlı, hafif ve hızlı kurulum  
-- **Flask** + **Flask-Limiter** ile güvenli API  
-- IP bazlı **rate limit** (örr: 10 istek/dakika)  
-- **Configurable** port ve rate-limit ayarları  
-- JSON formatında temiz hata & başarı yanıtları  
-- İstekleri otomatik **log**’lama  
+⚠️ UYARI: Bu yazılım test edilmemiştir. Üretim ortamı için uygun değildir. Eğitim ve geliştirme amaçlıdır.
+
 
 ---
 
-## 📂 Proje Dosya Yapısı
+🎯 1. Projenin Amacı
 
-. ├── app.py
-├── config.json
-├── kisiler.json
-└── README.md
+Bu projeyle, aşağıdaki kazanımları elde edeceksiniz:
+
+Flask ile RESTful API oluşturma mantığını öğrenirsiniz.
+
+JSON, YAML veya internet üzerinden veri yüklemeyi öğrenirsiniz.
+
+Rate limit (istek sınırı), logging (günlükleme) gibi profesyonel özellikleri entegre etmeyi öğrenirsiniz.
+
+Kendi API’nizi geliştirip çalıştırabilecek yapıyı kurmuş olursunuz.
+
+
 
 ---
 
-## ⚙️ Kurulum & Başlatma
+📁 2. Dosya ve Klasör Yapısı
 
-1. **Python 3** yüklü olduğundan emin olun.  
-2. Gerekli paketleri yükleyin:  
-   ```bash
-   pip install flask flask-limiter
+CapiKisiAPI/                 # Proje ana dizini
+├── app.py                   # Ana Flask API uygulaması
+├── config.json              # Ayar dosyası (port, limit, kaynak)
+├── requirements.txt         # Gerekli kütüphaneler
+├── data/                    # Veri kaynakları (örnek JSON/YAML)
+│   ├── kisiler.json
+│   └── kisiler.yaml
+├── logs/                    # API günlükleri (log)
+│   └── app.log
+└── README.txt               # Bu eğitim dökümanı
 
-3. config.json dosyasını düzenleyin:
+
+---
+
+🧠 2.1. Klasör Dosyaları (Kodlarla Birlikte)
+
+📄 app.py
+
+from flask import Flask, jsonify, request
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import logging
+import json
+import yaml
+import requests
+
+with open("config.json", "r", encoding="utf-8") as f:
+    config = json.load(f)
+
+data_source = config["data_source"]
+app = Flask(__name__)
+limiter = Limiter(get_remote_address, app=app, default_limits=[config["rate_limit"]])
+
+logging.basicConfig(filename="logs/app.log", level=getattr(logging, config["logging_level"].upper()),
+                    format='%(asctime)s - %(message)s')
+
+def veri_yukle():
+    try:
+        if data_source["type"] == "file":
+            if data_source["path"].endswith(".json"):
+                with open(data_source["path"], "r", encoding="utf-8") as f:
+                    return json.load(f)
+            elif data_source["path"].endswith(".yaml"):
+                with open(data_source["path"], "r", encoding="utf-8") as f:
+                    return yaml.safe_load(f)
+        elif data_source["type"] == "url":
+            r = requests.get(data_source["path"])
+            return r.json()
+    except:
+        return []
+
+def kisi_ara(tip, deger):
+    veri = veri_yukle()
+    return [kisi for kisi in veri if kisi.get(tip, '').lower() == deger.lower()]
+
+@app.route("/capiapi/<tip>/<deger>")
+@limiter.limit(config["rate_limit"])
+def sorgula(tip, deger):
+    logging.info(f"/capiapi/{tip}/{deger} - IP: {request.remote_addr}")
+    sonuc = kisi_ara(tip, deger)
+    if sonuc:
+        return jsonify({"durum": "başarılı", "veri": sonuc}), 200
+    return jsonify({"durum": "hata", "mesaj": "Kayıt bulunamadı.", "ip": request.remote_addr, "sorgu": deger}), 404
+
+@app.errorhandler(404)
+def hata404(e):
+    return jsonify({"durum": "hata", "mesaj": "Geçersiz istek adresi."}), 404
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=config["port"], ssl_context="adhoc")
+
+📄 config.json
 
 {
-  "port": 8080,
-  "rate_limit": "10/minute"
+  "port": 443,
+  "rate_limit": "10/minute",
+  "logging_level": "INFO",
+  "data_source": {
+    "type": "file",
+    "path": "data/kisiler.json"
+  }
 }
 
+📄 requirements.txt
 
-4. kisiler.json dosyasına örnek verileri ekleyin (aşağıya bakın).
+flask
+flask-limiter
+pyyaml
+requests
 
-
-5. Sunucuyu başlatın:
-
-python app.py
-
-
-
-
----
-
-📖 Örnek Veri – kisiler.json
+📄 data/kisiler.json
 
 [
-  {
-    "ad": "Kisi1",
-    "soyad": "kisi",
-    "tc": "11111111110",
-    "tel": "5555555555",
-    "ikametgah": "ankara"
-  },
-  {
-    "ad": "Kisi2",
-    "soyad": "kaya",
-    "tc": "11111111111",
-    "tel": "5555555554",
-    "ikametgah": "istanbul"
-  },
-  {
-    "ad": "Kisi3",
-    "soyad": "yılmaz",
-    "tc": "11111111112",
-    "tel": "5555555553",
-    "ikametgah": "izmir"
-  },
-  {
-    "ad": "Kisi4",
-    "soyad": "demir",
-    "tc": "11111111113",
-    "tel": "5555555552",
-    "ikametgah": "bursa"
-  },
-  {
-    "ad": "Kisi5",
-    "soyad": "çelik",
-    "tc": "11111111114",
-    "tel": "5555555551",
-    "ikametgah": "antalya"
-  },
-  {
-    "ad": "Kisi6",
-    "soyad": "özcan",
-    "tc": "11111111115",
-    "tel": "5555555550",
-    "ikametgah": "edirne"
-  }
+  {"ad": "Ayşe", "soyad": "Demir", "il": "Ankara", "tc": "11111111110", "gsm": "5431234567"},
+  {"ad": "Murat", "soyad": "Kaya", "il": "İstanbul", "tc": "11111111111", "gsm": "5437654321"}
 ]
 
+📄 data/kisiler.yaml
+
+- ad: Ayşe
+  soyad: Demir
+  il: Ankara
+  tc: "11111111110"
+  gsm: "5431234567"
+- ad: Murat
+  soyad: Kaya
+  il: İstanbul
+  tc: "11111111111"
+  gsm: "5437654321"
+
+📄 logs/app.log
+
+> Bu dosya, uygulama çalıştırıldığında otomatik oluşturulur ve günlük kayıtlarını içerir.
+
+
+
 
 ---
 
-🛠️ config.json Ayarları
+🔌 3. Kurulum ve Ortam Hazırlığı
 
+(Devam eder... önceki içerik korunur)
+
+...
+
+. API geliştiricileri için kılavuz niteliğindedir.
+
+---
+
+## ⚙️ 3. Kurulum ve Ortam Hazırlığı
+
+Bu proje çalıştırılmak için değil, öğrenilmek içindir. Yine de çalıştırmak isteyenler için örnek kurulum süreci:
+
+**1. Python ve pip yüklü olmalı**
+
+**2. Sanal ortam kurulumu (opsiyonel ama önerilir)**
+
+```bash
+python -m venv venv
+# Linux/macOS: source venv/bin/activate
+# Windows:     venv\Scripts\activate
+```
+
+**3. Kütüphanelerin yüklenmesi**
+
+```bash
+pip install -r requirements.txt
+```
+
+**4. Örnek yapılandırma dosyası (`config.json`)**
+
+```json
 {
-  "port": 8080,
-  "rate_limit": "10/minute"
-}
-
-port: API’nın dinleyeceği HTTP portu
-
-rate_limit: IP başına dakika bazında istek limiti ("5/minute", "100/day" vb.)
-
-
-
----
-
-🔗 API Endpoint
-
-GET http://<HOST>:<PORT>/apiz/<kisi_ad>
-
-Parametre	Açıklama
-
-kisi_ad	Sorgulanacak kişi adı
-
-
-
----
-
-🎯 Örnek Kullanım
-
-1. Başarılı Sorgu
-
-curl http://localhost:8080/apiz/Kisi3
-
-Yanıt (HTTP 200):
-
-{
-  "durum": "başarılı",
-  "veri": {
-    "ad": "Kisi3",
-    "soyad": "yılmaz",
-    "tc": "11111111112",
-    "tel": "5555555553",
-    "ikametgah": "izmir"
+  "port": 443,
+  "rate_limit": "10/minute",
+  "logging_level": "INFO",
+  "data_source": {
+    "type": "file",
+    "path": "data/kisiler.json"
   }
 }
+```
 
-2. Kişi Bulunamadığında
+---
 
-curl http://localhost:8080/apiz/MevcutDegil
+## 🔌 4. API Nasıl Çalışır? Kodun Yapısı Nedir?
 
-Yanıt (HTTP 404):
+`app.py` dosyasındaki kod, aşağıdaki görevleri yerine getirir:
 
+* `config.json` içinden ayarları okur (port, rate limit, veri kaynağı).
+* Flask uygulamasını başlatır.
+* Verileri `.json`, `.yaml` dosyasından ya da bir URL’den okur.
+* Gelen endpoint isteklerine göre filtreleme yapar ve sonuç döner.
+* Loglama ile istekleri terminale veya log dosyasına yazar.
+
+Kodun içinde yorum satırları ile açıklamalar yer alır. Her endpoint bir sorgu türünü temsil eder.
+
+---
+
+## 🔍 5. API Sorgu Örnekleri ve Yapısı
+
+Her sorgu HTTPS ile çalışır. Adres yapısı aşağıdaki gibidir:
+
+```
+https://örnekapı.net/capiapi/<endpoint>/<değer>
+```
+
+**Sorgu Örnekleri:**
+
+* `.../capiapi/adsoyadsorgu/ayse`
+* `.../capiapi/adsoyadilsorgu/ayseankara`
+* `.../capiapi/adressorgu/11111111110`
+* `.../capiapi/gsmtcsorgu/5431234567`
+* `.../capiapi/tcgsmsorgu/11111111110`
+* `.../capiapi/ailesorgu/11111111110`
+* `.../capiapi/sülalesorgu/11111111110`
+
+**Başarılı JSON Yanıt Örneği:**
+
+```json
+{
+  "durum": "başarılı",
+  "veri": [ { "ad": "Ayşe", "soyad": "Demir", "il": "Ankara" } ]
+}
+```
+
+**Hatalı JSON Yanıt Örneği:**
+
+```json
 {
   "durum": "hata",
-  "mesaj": "Kişi bulunamadı.",
-  "ip": "127.0.0.1",
-  "sorgu": "MevcutDegil"
+  "mesaj": "Kayıt bulunamadı.",
+  "sorgu": "ayse",
+  "ip": "192.168.1.5"
 }
+```
 
-3. Rate Limit Aşıldığında
+**Rate Limit Aşımı:**
 
-Yanıt (HTTP 429):
-
+```json
 {
-  "errors": ["Rate limit exceeded: 10 per 1 minute"]
+  "durum": "hata",
+  "mesaj": "Çok fazla istek. Lütfen biraz bekleyin."
 }
-
-
----
-
-📝 Loglama
-
-Her istek, konsola aşağıdaki formatta yazılır:
-
-2025-05-23 14:00:00,000 - API çağrısı: /apiz/Kisi3 - IP: 192.168.1.10
-
+```
 
 ---
 
-💡 Geliştirme & İyileştirme Fikirleri
+## 💡 6. Geliştirme Fikirleri – Öğrenmeye Devam!
 
-🔐 JWT veya API Key ile kimlik doğrulama
+API’yi daha profesyonel hale getirmek için eklemeniz önerilir:
 
-🗄️ SQLite/MongoDB gibi gerçek bir veritabanı entegrasyonu
-
-➕ Kişi ekleme (POST), güncelleme (PUT) ve silme (DELETE) endpoint’leri
-
-📊 Swagger/OpenAPI dokümantasyonu
-
-🌐 Docker desteği ve CI/CD pipeline kurulumu
-
-🔒 HTTPS ile güvenli yayın
-
-
+* 🔑 JWT token ile erişim doğrulama
+* 📊 Swagger ile canlı dökümantasyon
+* 🔄 Redis ile önbellekleme (caching)
+* 🧩 SQLAlchemy ile veritabanı desteği
+* 📈 Prometheus & Grafana ile izleme
+* 📥 Panel üzerinden veri ekleme/silme
 
 ---
 
-📜 Lisans
+## 👨‍🏫 7. Sonuç ve Öğrenme Hedefi
 
-Bu proje MIT Lisansı ile yayınlanmıştır.
-Made with ❤️ by Capi
+Bu proje:
 
+* Öğretme ve öğrenme temellidir.
+* Çalışan bir sistem değil, örnek yapı ve kod öğreticisidir.
+* Kendi API’nizi geliştirebilmeniz için rehberdir.
 
+İsterseniz kodları değiştirin, farklı veri kaynaklarıyla test edin ve profesyonel bir API geliştiricisi olma yolunda ilk adımı atın!
 
+---
+
+## 📄 Lisans
+
+MIT Lisansı © 2025 Capi
+
+---
+
+## 👋 Sorularınız İçin
+
+Telegram: [@capiyedek](https://t.me/capiyedek)
+GitHub: [github.com/byblackcapi](https://github.com/byblackcapi)
+
+Mutlu kodlamalar! 🚀
