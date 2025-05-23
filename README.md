@@ -1,4 +1,4 @@
-🚀 Capi Kişi Sorgulama API Eğitimi  📘
+🚀 Capi Kişi Sorgulama API Eğitimi – Profesör Rehberi 📘
 
 Bu doküman, adım adım RESTful API geliştirmeyi öğretmek amacıyla hazırlanmıştır. Üretim için değil, eğitim ve öğrenim amaçlı bir yapı sunar. Kendi API’nizi özelleştirerek geliştirebilmeniz için gerekli tüm bilgiler aşağıdadır.
 
