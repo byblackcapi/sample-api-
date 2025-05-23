@@ -1,27 +1,57 @@
----
+# 🎉 CapiAPI – Kişi Bilgi Sorgulama REST API  
 
-# CapiAPI – Kişi Bilgi Sorgulama API’si  
-**Dosya tabanlı, hafif, geliştirilebilir bir REST API sistemi**  
-
-> ⚠️ **UYARI:** Bu proje test edilmemiştir. Gerçek verilerde kullanmadan önce detaylı test yapılmalıdır.
+> ⚠️ **UYARI:** Bu proje **test edilmemiştir**. Gerçek verilerle kullanmadan önce lütfen kapsamlı test yapınız!
 
 ---
 
-## Özellikler 🚀
-
-- JSON dosyasına dayalı kişi sorgulama sistemi  
-- Gelişmiş hata yanıtları ve IP bazlı rate limit  
-- Port yapılandırması (`config.json`)  
-- Basit bir REST endpoint ile sorgu  
-- Her IP için dakika başına istek limiti  
-- Flask ve Flask-Limiter desteği  
-- Tamamen açık kaynak!
+## 🚀 Özellikler  
+- Dosya tabanlı, hafif ve hızlı kurulum  
+- **Flask** + **Flask-Limiter** ile güvenli API  
+- IP bazlı **rate limit** (örr: 10 istek/dakika)  
+- **Configurable** port ve rate-limit ayarları  
+- JSON formatında temiz hata & başarı yanıtları  
+- İstekleri otomatik **log**’lama  
 
 ---
 
-## Örnek Veri – `kisiler.json` 📁
+## 📂 Proje Dosya Yapısı
 
-```json
+. ├── app.py
+├── config.json
+├── kisiler.json
+└── README.md
+
+---
+
+## ⚙️ Kurulum & Başlatma
+
+1. **Python 3** yüklü olduğundan emin olun.  
+2. Gerekli paketleri yükleyin:  
+   ```bash
+   pip install flask flask-limiter
+
+3. config.json dosyasını düzenleyin:
+
+{
+  "port": 8080,
+  "rate_limit": "10/minute"
+}
+
+
+4. kisiler.json dosyasına örnek verileri ekleyin (aşağıya bakın).
+
+
+5. Sunucuyu başlatın:
+
+python app.py
+
+
+
+
+---
+
+📖 Örnek Veri – kisiler.json
+
 [
   {
     "ad": "Kisi1",
@@ -32,7 +62,7 @@
   },
   {
     "ad": "Kisi2",
-    "soyad": "kisi",
+    "soyad": "kaya",
     "tc": "11111111111",
     "tel": "5555555554",
     "ikametgah": "istanbul"
@@ -57,117 +87,120 @@
     "tc": "11111111114",
     "tel": "5555555551",
     "ikametgah": "antalya"
+  },
+  {
+    "ad": "Kisi6",
+    "soyad": "özcan",
+    "tc": "11111111115",
+    "tel": "5555555550",
+    "ikametgah": "edirne"
   }
 ]
 
 
 ---
 
-Yapılandırma – config.json ⚙️
+🛠️ config.json Ayarları
 
 {
   "port": 8080,
   "rate_limit": "10/minute"
 }
 
-port: API'nin yayınlanacağı port
+port: API’nın dinleyeceği HTTP portu
 
-rate_limit: IP başına dakika başı sorgu limiti
+rate_limit: IP başına dakika bazında istek limiti ("5/minute", "100/day" vb.)
+
+
+
+---
+
+🔗 API Endpoint
+
+GET http://<HOST>:<PORT>/apiz/<kisi_ad>
+
+Parametre	Açıklama
+
+kisi_ad	Sorgulanacak kişi adı
 
 
 
 ---
 
-Kurulum ve Kullanım 🔧
+🎯 Örnek Kullanım
 
-Gereksinimler
+1. Başarılı Sorgu
 
-Python 3.x
+curl http://localhost:8080/apiz/Kisi3
 
-Flask
-
-Flask-Limiter
-
-
-Kurulum
-
-pip install flask flask-limiter
-
-API'yi Başlat
-
-python app.py
-
-
----
-
-API Kullanımı 📡
-
-Örnek İstek
-
-GET http://localhost:8080/apiz/Kisi1
-
-Başarılı Yanıt
+Yanıt (HTTP 200):
 
 {
   "durum": "başarılı",
   "veri": {
-    "ad": "Kisi1",
-    "soyad": "kisi",
-    "tc": "11111111110",
-    "tel": "5555555555",
-    "ikametgah": "ankara"
+    "ad": "Kisi3",
+    "soyad": "yılmaz",
+    "tc": "11111111112",
+    "tel": "5555555553",
+    "ikametgah": "izmir"
   }
 }
 
-Başarısız Yanıt (Kişi Yoksa)
+2. Kişi Bulunamadığında
+
+curl http://localhost:8080/apiz/MevcutDegil
+
+Yanıt (HTTP 404):
 
 {
   "durum": "hata",
   "mesaj": "Kişi bulunamadı.",
   "ip": "127.0.0.1",
-  "sorgu": "bilinmeyen"
+  "sorgu": "MevcutDegil"
+}
+
+3. Rate Limit Aşıldığında
+
+Yanıt (HTTP 429):
+
+{
+  "errors": ["Rate limit exceeded: 10 per 1 minute"]
 }
 
 
 ---
 
-Ek Özellikler 🛠
+📝 Loglama
 
-Rate Limit: Her IP için dakikada maksimum 10 sorgu
+Her istek, konsola aşağıdaki formatta yazılır:
 
-Loglama: Her API isteği konsola yazılır
+2025-05-23 14:00:00,000 - API çağrısı: /apiz/Kisi3 - IP: 192.168.1.10
 
-Gelişmiş Hatalar: JSON formatında hata detayları
+
+---
+
+💡 Geliştirme & İyileştirme Fikirleri
+
+🔐 JWT veya API Key ile kimlik doğrulama
+
+🗄️ SQLite/MongoDB gibi gerçek bir veritabanı entegrasyonu
+
+➕ Kişi ekleme (POST), güncelleme (PUT) ve silme (DELETE) endpoint’leri
+
+📊 Swagger/OpenAPI dokümantasyonu
+
+🌐 Docker desteği ve CI/CD pipeline kurulumu
+
+🔒 HTTPS ile güvenli yayın
 
 
 
 ---
 
-Geliştirme Önerileri 🧪
+📜 Lisans
 
-[ ] JWT veya API Key ile koruma
-
-[ ] Kişi ekleme/silme/güncelleme (POST/PUT/DELETE)
-
-[ ] SQLite veya MongoDB entegrasyonu
-
-[ ] Admin paneli / kullanıcı girişi
-
-[ ] Swagger/OpenAPI entegrasyonu
-
-[ ] HTTPS destekli yayına alma
+Bu proje MIT Lisansı ile yayınlanmıştır.
+Made with ❤️ by Capi
 
 
 
----
-
-Lisans ve Bilgilendirme 📜
-
-Bu proje eğitim ve test amaçlıdır. Gerçek kişisel verilerle kullanılmamalıdır!
-MIT Lisansı ile sunulmuştur.
-
-Made by Capi
-GitHub: github.com/byblackcapi
-Telegram Destek: t.me/capiyedek_support
-
----
