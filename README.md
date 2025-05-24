@@ -5,7 +5,17 @@
 ![Status](https://img.shields.io/badge/status-Eğitim%20Amaçlı-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-yellow)
 ![Flask](https://img.shields.io/badge/framework-Flask-red)
-
+![RESTful](https://img.shields.io/badge/API-RESTful-lightgrey)
+![Rate Limit](https://img.shields.io/badge/rate--limit-enabled-brightgreen)
+![Logging](https://img.shields.io/badge/logging-active-orange)
+![YAML Support](https://img.shields.io/badge/YAML-supported-blueviolet)
+![JSON Support](https://img.shields.io/badge/JSON-supported-lightblue)
+![SSL](https://img.shields.io/badge/SSL-AdHoc-informational)
+![Deployment](https://img.shields.io/badge/deploy-localhost-red)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Last Update](https://img.shields.io/badge/last%20update-May%202025-critical)
+![Contributions](https://img.shields.io/badge/contributions-welcome-success)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20MacOS-black)
 > **⚠️ UYARI:** Bu yazılım test edilmemiştir. Üretim ortamı için uygun değildir. Eğitim ve geliştirme amaçlıdır.
 
 ---
